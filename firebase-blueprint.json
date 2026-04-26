@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "ColoringBook": {
+      "title": "ColoringBook",
+      "description": "Metadata for a coloring book.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "childName": { "type": "string" },
+        "theme": { "type": "string" },
+        "thumbnail": { "type": "string", "description": "The first image base64 for preview." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "childName", "theme", "thumbnail", "createdAt"]
+    },
+    "ColoringImage": {
+      "title": "ColoringImage",
+      "description": "Individual coloring page image.",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "description": "Base64 image data." },
+        "index": { "type": "integer" }
+      },
+      "required": ["url", "index"]
+    }
+  },
+  "firestore": {
+    "books/{bookId}": {
+      "schema": "ColoringBook",
+      "description": "Metadata collection."
+    },
+    "books/{bookId}/images/{imageId}": {
+      "schema": "ColoringImage",
+      "description": "Individual images subcollection."
+    }
+  }
+}

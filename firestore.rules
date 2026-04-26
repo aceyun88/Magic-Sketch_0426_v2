@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidColoringBook(data) {
+      return data.userId == request.auth.uid 
+          && data.childName is string && data.childName.size() <= 50
+          && data.theme is string && data.theme.size() <= 200
+          && data.thumbnail is string && data.thumbnail.size() <= 1048576
+          && data.createdAt == request.time;
+    }
+
+    function isValidColoringImage(data) {
+      return data.url is string && data.url.size() <= 1048576
+          && data.index is int && data.index >= 0 && data.index < 4;
+    }
+
+    match /books/{bookId} {
+      allow create: if isSignedIn() && isValidColoringBook(request.resource.data);
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      match /images/{imageId} {
+        allow create: if isSignedIn() && isValidColoringImage(request.resource.data)
+                      && get(/databases/$(database)/documents/books/$(bookId)).data.userId == request.auth.uid;
+        allow get, list: if isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.userId == request.auth.uid;
+        allow delete: if isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.userId == request.auth.uid;
+      }
+    }
+  }
+}
